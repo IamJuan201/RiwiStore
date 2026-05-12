@@ -5,8 +5,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Riwi Store</title>
-
-  <!-- Estilos propios (sin Tailwind) -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -15,49 +13,50 @@
   <!-- HEADER -->
   <header class="site-header">
     <div class="header-inner">
-      <h1 class="site-logo">Riwi Store</h1>
+      <h1 class="site-logo" id="site-logo">Riwi Store</h1>
     </div>
   </header>
 
-  <!-- BUSCADOR -->
+  <!-- BUSCADOR + NAV -->
   <section class="search-section">
     <div class="container">
       <div class="search-wrapper">
         <form class="search-form" id="frm-search">
-          <input
-            type="text"
-            placeholder="Buscar producto..."
-            class="search-input"
-          />
+          <input type="text" placeholder="Buscar producto..." class="search-input" />
           <button type="submit" class="search-btn">Buscar</button>
         </form>
       </div>
+
+      <!-- NAVEGACIÓN / CATEGORÍAS -->
+      <nav class="category-nav">
+        <button class="cat-btn cat-btn--active" id="btn-inicio">Inicio</button>
+        <div class="cat-list" id="cat-list"></div>
+      </nav>
     </div>
   </section>
 
-  <!-- RESULTADOS -->
-  <section class="results-section">
+  <!-- RESULTADOS DE BÚSQUEDA -->
+  <section class="results-section" id="results-section" style="display:none;">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Resultados</h2>
+        <h2 class="section-title" id="results-title">Resultados</h2>
         <span class="results-count">
           <span id="quantity">0</span> productos encontrados
         </span>
       </div>
-
       <div class="grid-results" id="search-results"></div>
     </div>
   </section>
 
-  <!-- CARTELERA -->
+  <!-- CATÁLOGO PRINCIPAL -->
   <section class="catalog-section" id="catalog-section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title" id="catalog-title">Productos</h2>
+        <h2 class="section-title" id="catalog-title">Todos los productos</h2>
         <button class="view-all-btn">Ver todo</button>
       </div>
-
       <div class="grid-catalog" id="Catalog"></div>
+      <div class="pagination" id="pagination"></div>
     </div>
   </section>
 
