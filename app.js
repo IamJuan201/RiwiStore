@@ -1,33 +1,33 @@
-// Asegúrate de que el DOM esté listo
 document.addEventListener('DOMContentLoaded', function () {
-    const formSearch = document.getElementById('frm-search');
-    const catalog = document.getElementById('Catalog');
+    const formSearch   = document.getElementById('frm-search');
+    const catalog      = document.getElementById('Catalog');
     const searchResults = document.getElementById('search-results');
-    const quantity = document.getElementById('quantity');
+    const quantity     = document.getElementById('quantity');
+    const catalogSection = document.getElementById('catalog-section');
+    const catalogTitle   = document.getElementById('catalog-title');
 
-    // Obtener todos los productos al cargar
+    // Cargar todos los productos al inicio
     getProducts();
 
     async function getProducts() {
         const response = await fetch('https://dummyjson.com/products');
         const data = await response.json();
 
-        catalog.innerHTML = ''; // Limpiar antes de agregar
+        catalog.innerHTML = '';
 
         for (let product of data.products) {
             const { title, description, price, images, availabilityStatus } = product;
+
             catalog.innerHTML += `
-            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-                <div class="h-100 bg-zinc-800">
-                    <img src="${images[0]}" alt="${title}">
+            <div class="card">
+                <div class="card-img-wrapper">
+                    <img src="${images[0]}" alt="${title}" />
                 </div>
-                <div class="p-4">
-                    <h3 class="font-semibold">${title}</h3>
-                    <p class="text-sm text-zinc-400 mt-1">${description}</p>
-                    <br>
-                    <p class="text-sm text-zinc-400 mt-1">$${price}</p>
-                    <br>
-                    <p class="text-sm text-zinc-400 mt-1">${availabilityStatus}</p>
+                <div class="card-body">
+                    <h3 class="card-title">${title}</h3>
+                    <p class="card-meta">${description}</p>
+                    <p class="card-meta">$${price}</p>
+                    <p class="card-meta">${availabilityStatus}</p>
                 </div>
             </div>`;
         }
@@ -42,37 +42,37 @@ document.addEventListener('DOMContentLoaded', function () {
         searchResults.innerHTML = '';
 
         if (data.products.length === 0) {
-            searchResults.innerHTML = '<p class="text-zinc-400">No se encontraron productos.</p>';
+            searchResults.innerHTML = '<p class="no-results">No se encontraron productos.</p>';
+            return;
         }
 
         for (let product of data.products) {
             const { title, images, rating } = product;
+
             searchResults.innerHTML += `
-            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-                <div class="h-100 bg-zinc-800">
-                    <img src="${images[0]}" alt="${title}">
+            <div class="card">
+                <div class="card-img-wrapper">
+                    <img src="${images[0]}" alt="${title}" />
                 </div>
-                <div class="p-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="font-semibold">${title}</h3>
-                        <span class="text-yellow-400 text-sm">★ ${rating}</span>
+                <div class="card-body">
+                    <div class="card-header-row">
+                        <h3 class="card-title">${title}</h3>
+                        <span class="card-rating">★ ${rating}</span>
                     </div>
                 </div>
             </div>`;
         }
 
         // Ocultar catálogo principal al buscar
-        catalog.style.display = 'none';
-        document.getElementById('all-products-title').style.display = 'none';
+        if (catalogSection) catalogSection.style.display = 'none';
+        if (catalogTitle)   catalogTitle.style.display   = 'none';
     }
 
-    // Evento de búsqueda (una sola vez)
+    // Evento submit del buscador
     formSearch.addEventListener('submit', function (event) {
         event.preventDefault();
         const searchText = this.querySelector('input').value.trim();
-
         if (searchText.length === 0) return;
-
         searchProducts(searchText);
         this.querySelector('input').value = '';
     });
