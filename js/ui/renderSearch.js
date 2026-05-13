@@ -1,29 +1,61 @@
-export function renderSearchCards(container, products) {
+// ui/renderSearch.js
 
-    container.innerHTML = '';
+export function renderSearchResults(
+    searchResults,
+    products
+) {
 
-    products.forEach(product => {
+    searchResults.innerHTML = '';
+
+    for (let product of products) {
 
         const {
             title,
-            thumbnail,
+            images,
             rating
         } = product;
 
-        container.innerHTML += `
+        searchResults.insertAdjacentHTML(
+            'beforeend',
+            `
             <div class="card">
 
-                <img 
-                    src="${thumbnail}" 
-                    alt="${title}"
-                >
+                <div class="card-img-wrapper">
+                    <img
+                        src="${images[0]}"
+                        alt="${title}"
+                        loading="lazy"
+                    />
+                </div>
 
                 <div class="card-body">
-                    <h3>${title}</h3>
-                    <span>★ ${rating}</span>
+
+                    <div class="card-header-row">
+
+                        <h3 class="card-title">
+                            ${title}
+                        </h3>
+
+                        <span class="card-rating">
+                            ★ ${rating}
+                        </span>
+
+                    </div>
+
                 </div>
 
             </div>
-        `;
-    });
+            `
+        );
+    }
+}
+
+export function showResults(
+    catalogSection,
+    resultsSection
+) {
+
+    catalogSection.style.display = 'none';
+
+    resultsSection.style.display = '';
 }

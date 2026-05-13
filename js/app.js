@@ -1,189 +1,245 @@
-import { store } from './state/store.js';
-
 import {
     getProducts,
-    getProductsByCategory,
-    getCategories,
-    searchProducts
-} from './api/productsApi.js';
+    getByCategory,
+    searchProducts,
+    getCategories
+}
+from './api/productsApi.js';
 
-import { renderCatalogCards } from './ui/renderCatalog.js';
-import { renderSearchCards } from './ui/renderSearch.js';
-import { renderPagination } from './ui/pagination.js';
+import {
+    renderProducts,
+    renderCategories,
+    showCatalog
+}
+from './ui/renderCatalog.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+import {
+    renderSearchResults,
+    showResults
+}
+from './ui/renderSearch.js';
 
-    // =========================
-    // DOM
-    // =========================
+import {
+    renderPagination
+}
+from './ui/pagination.js';
 
-    const catalog = document.getElementById('Catalog');
-    const pagination = document.getElementById('pagination');
-    const catList = document.getElementById('cat-list');
-    const formSearch = document.getElementById('frm-search');
-    const searchResults = document.getElementById('search-results');
+import {
+    state,
+    LIMIT
+}
+from './state/store.js';
 
-    const catalogSection = document.getElementById('catalog-section');
-    const resultsSection = document.getElementById('results-section');
 
-    const quantity = document.getElementById('quantity');
-    const resultTitle = document.getElementById('results-title');
+// DOM
 
-    const btnInicio = document.getElementById('btn-inicio');
+const formSearch     = document.getElementById('frm-search');
 
-    // =========================
-    // VISTAS
-    // =========================
+const catalog        = document.getElementById('Catalog');
 
-    function showCatalog() {
-        catalogSection.style.display = '';
-        resultsSection.style.display = 'none';
-    }
+const searchResults  = document.getElementById('search-results');
 
-    function showResults() {
-        catalogSection.style.display = 'none';
-        resultsSection.style.display = '';
-    }
+const quantity       = document.getElementById('quantity');
 
-    // =========================
-    // CARGA DE PRODUCTOS
-    // =========================
+const catList        = document.getElementById('cat-list');
 
-    async function loadPage() {
+const btnInicio      = document.getElementById('btn-inicio');
 
-        const skip = (store.currentPage - 1) * store.LIMIT;
+const siteLogo       = document.getElementById('site-logo');
 
-        let data;
+const pagination     = document.getElementById('pagination');
 
-        if (store.currentSlug) {
-            data = await getProductsByCategory(
-                store.currentSlug,
-                store.LIMIT,
-                skip
-            );
-        } else {
-            data = await getProducts(
-                store.LIMIT,
-                skip
-            );
-        }
+const catalogSection = document.getElementById('catalog-section');
 
-        store.totalProducts = data.total;
+const resultsSection = document.getElementById('results-section');
 
-        renderCatalogCards(catalog, data.products);
+const catalogTitle   = document.getElementById('catalog-title');
 
-        renderPagination(
-            pagination,
-            store.currentPage,
-            store.totalProducts,
-            store.LIMIT,
+const resultTitle    = document.getElementById('results-title');
 
-            () => {
-                store.currentPage--;
-                loadPage();
-            },
 
-            () => {
-                store.currentPage++;
-                loadPage();
-            }
+// Productos
+
+async function loadProducts() {
+
+    const skip =
+        (state.currentPage - 1) * LIMIT;
+
+    let data;
+
+    if (state.currentSlug) {
+
+        data = await getByCategory(
+            state.currentSlug,
+            LIMIT,
+            skip
+        );
+
+    } else {
+
+        data = await getProducts(
+            LIMIT,
+            skip
         );
     }
 
-    // =========================
-    // CATEGORÍAS
-    // =========================
+    state.totalProducts = data.total;
 
-    async function loadCategories() {
+    renderProducts(
+        catalog,
+        data.products
+    );
 
-        const categories = await getCategories();
+    renderPagination(
+        pagination,
+        loadProducts
+    );
+}
 
-        catList.innerHTML = '';
 
-        categories.forEach(cat => {
+// Buscar
 
-            const btn = document.createElement('button');
+async function handleSearch(text) {
 
-            btn.textContent = cat.name;
-            btn.classList.add('cat-btn');
+    const data =
+        await searchProducts(text);
 
-            btn.addEventListener('click', () => {
+    const filtered =
+        data.products.filter(product => {
 
-                store.currentSlug = cat.slug;
-                store.currentPage = 1;
-
-                document.querySelectorAll('.cat-btn')
-                    .forEach(b => b.classList.remove('cat-btn--active'));
-
-                btn.classList.add('cat-btn--active');
-
-                showCatalog();
-                loadPage();
-            });
-
-            catList.appendChild(btn);
+            return product.title
+                .toLowerCase()
+                .includes(text.toLowerCase());
         });
+
+    resultTitle.textContent =
+        `Resultados para "${text}"`;
+
+    quantity.textContent =
+        filtered.length;
+
+    if (filtered.length === 0) {
+
+        searchResults.innerHTML =
+            '<p class="no-results">No se encontraron productos.</p>';
+
+        showResults(
+            catalogSection,
+            resultsSection
+        );
+
+        return;
     }
 
-    // =========================
-    // BÚSQUEDA
-    // =========================
+    renderSearchResults(
+        searchResults,
+        filtered
+    );
 
-    formSearch.addEventListener('submit', async (e) => {
+    showResults(
+        catalogSection,
+        resultsSection
+    );
+}
 
-        e.preventDefault();
 
-        const text = formSearch.querySelector('input').value.trim();
+// Categorías
+
+async function loadAllCategories() {
+
+    const categories =
+        await getCategories();
+
+    renderCategories(
+        categories,
+        catList,
+        category => {
+
+            state.currentSlug =
+                category.slug;
+
+            state.currentPage = 1;
+
+            catalogTitle.textContent =
+                category.name;
+
+            loadProducts();
+
+            showCatalog(
+                catalogSection,
+                resultsSection,
+                formSearch,
+                quantity,
+                searchResults
+            );
+
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    );
+}
+
+
+// Inicio
+
+function goHome() {
+
+    state.currentSlug = null;
+
+    state.currentPage = 1;
+
+    catalogTitle.textContent =
+        'Todos los productos';
+
+    showCatalog(
+        catalogSection,
+        resultsSection,
+        formSearch,
+        quantity,
+        searchResults
+    );
+
+    loadProducts();
+}
+
+
+// Eventos
+
+formSearch.addEventListener(
+    'submit',
+    event => {
+
+        event.preventDefault();
+
+        const text =
+            formSearch
+            .querySelector('input')
+            .value
+            .trim();
 
         if (!text) return;
 
-        const data = await searchProducts(text);
+        handleSearch(text);
 
-        renderSearchCards(searchResults, data.products);
+        formSearch.querySelector('input').value = '';
+    }
+);
 
-        quantity.textContent = data.products.length;
-        resultTitle.textContent = `Resultados para "${text}"`;
+btnInicio.addEventListener(
+    'click',
+    goHome
+);
 
-        showResults();
-    });
+siteLogo.addEventListener(
+    'click',
+    goHome
+);
 
-    // =========================
-    // INICIO (HOME)
-    // =========================
 
-    btnInicio.addEventListener('click', () => {
+// Arranque
 
-        store.currentSlug = null;
-        store.currentPage = 1;
+loadAllCategories();
 
-        document.querySelectorAll('.cat-btn')
-            .forEach(b => b.classList.remove('cat-btn--active'));
-
-        btnInicio.classList.add('cat-btn--active');
-
-        showCatalog();
-        loadPage();
-    });
-
-    // Click logo también vuelve al inicio
-    document.getElementById('site-logo').addEventListener('click', () => {
-
-        store.currentSlug = null;
-        store.currentPage = 1;
-
-        document.querySelectorAll('.cat-btn')
-            .forEach(b => b.classList.remove('cat-btn--active'));
-
-        btnInicio.classList.add('cat-btn--active');
-
-        showCatalog();
-        loadPage();
-    });
-
-    // =========================
-    // INIT
-    // =========================
-
-    loadCategories();
-    loadPage();
-});
+loadProducts();
