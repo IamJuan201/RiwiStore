@@ -1,226 +1,265 @@
-document.addEventListener('DOMContentLoaded', function () {
+// Variables globales
 
-    // Elementos del DOM
-    const formSearch     = document.getElementById('frm-search');
-    const catalog        = document.getElementById('Catalog');
-    const searchResults  = document.getElementById('search-results');
-    const quantity       = document.getElementById('quantity');
-    const resultsSection = document.getElementById('results-section');
-    const catalogSection = document.getElementById('catalog-section');
-    const catalogTitle   = document.getElementById('catalog-title');
-    const resultTitle    = document.getElementById('results-title');
-    const catList        = document.getElementById('cat-list');
-    const btnInicio      = document.getElementById('btn-inicio');
-    const siteLogo       = document.getElementById('site-logo');
-    const pagination     = document.getElementById('pagination');
-    const categoryNav    = document.querySelector('.category-nav');
+const formSearch     = document.getElementById('frm-search');
+const catalog        = document.getElementById('Catalog');
+const searchResults  = document.getElementById('search-results');
+const quantity       = document.getElementById('quantity');
+const catList        = document.getElementById('cat-list');
+const btnInicio      = document.getElementById('btn-inicio');
+const siteLogo       = document.getElementById('site-logo');
+const pagination     = document.getElementById('pagination');
+const catalogSection = document.getElementById('catalog-section');
+const resultsSection = document.getElementById('results-section');
+const catalogTitle   = document.getElementById('catalog-title');
+const resultTitle    = document.getElementById('results-title');
 
-    // Estado de paginación
-    const LIMIT = 10;           // productos por página
-    let currentPage  = 1;
-    let totalProducts = 0;
-    let currentSlug  = null;    // null = todos, 'beauty' = categoría
+const LIMIT = 10;         // Productos por página
+let currentPage   = 1;    // Página actual
+let totalProducts = 0;    // Total que devuelve la API
+let currentSlug   = null; // Categoría activa (null = todas)
+let activeBtn     = btnInicio; // Botón del menú que está resaltado
 
-    // Estado activo de categoría
-    let activeBtn = btnInicio;
 
-    function setActive(btn) {
-        if (activeBtn) activeBtn.classList.remove('cat-btn--active');
-        activeBtn = btn;
-        btn.classList.add('cat-btn--active');
+// Cargar todos los productos
+
+async function getProducts() {
+    const skip = (currentPage - 1) * LIMIT;
+    const response = await fetch(`https://dummyjson.com/products?limit=${LIMIT}&skip=${skip}`);
+    const data = await response.json();
+
+    totalProducts = data.total;
+    catalog.innerHTML = '';
+
+    for (let product of data.products) {
+        const { title, description, price, images, availabilityStatus } = product;
+
+        catalog.innerHTML += `
+        <div class="card">
+            <div class="card-img-wrapper">
+                <img src="${images[0]}" alt="${title}" loading="lazy" />
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">${title}</h3>
+                <p class="card-meta">${description}</p>
+                <p class="card-meta">$${price}</p>
+                <p class="card-meta">${availabilityStatus}</p>
+            </div>
+        </div>`;
     }
 
-    // Vista: mostrar catálogo, ocultar resultados
-    function showCatalog() {
-        resultsSection.style.display = 'none';
-        catalogSection.style.display = '';
-        formSearch.querySelector('input').value = '';
-        quantity.textContent = '0';
-        searchResults.innerHTML = '';
+    renderPagination();
+}
+
+
+// Cargar productos por categoría
+
+async function getByCategory(slug, name) {
+    const skip = (currentPage - 1) * LIMIT;
+    const response = await fetch(`https://dummyjson.com/products/category/${slug}?limit=${LIMIT}&skip=${skip}`);
+    const data = await response.json();
+
+    totalProducts = data.total;
+    catalogTitle.textContent = name;
+    catalog.innerHTML = '';
+
+    for (let product of data.products) {
+        const { title, description, price, images, availabilityStatus } = product;
+
+        catalog.innerHTML += `
+        <div class="card">
+            <div class="card-img-wrapper">
+                <img src="${images[0]}" alt="${title}" loading="lazy" />
+            </div>
+            <div class="card-body">
+                <h3 class="card-title">${title}</h3>
+                <p class="card-meta">${description}</p>
+                <p class="card-meta">$${price}</p>
+                <p class="card-meta">${availabilityStatus}</p>
+            </div>
+        </div>`;
     }
 
-    // Vista: mostrar resultados, ocultar catálogo
-    function showResults() {
-        catalogSection.style.display = 'none';
-        resultsSection.style.display = '';
-    }
+    renderPagination();
+    showCatalog();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-    // Renderizar tarjetas de catálogo
-    function renderCatalogCards(products) {
-        catalog.innerHTML = '';
-        for (const { title, description, price, images, availabilityStatus } of products) {
-            catalog.innerHTML += `
-            <div class="card">
-                <div class="card-img-wrapper">
-                    <img src="${images[0]}" alt="${title}" loading="lazy" />
-                </div>
-                <div class="card-body">
-                    <h3 class="card-title">${title}</h3>
-                    <p class="card-meta">${description}</p>
-                    <p class="card-meta">$${price}</p>
-                    <p class="card-meta">${availabilityStatus}</p>
-                </div>
-            </div>`;
-        }
-    }
 
-    // Renderizar tarjetas de búsqueda
-    function renderSearchCards(products) {
-        searchResults.innerHTML = '';
-        for (const { title, images, rating } of products) {
-            searchResults.innerHTML += `
-            <div class="card">
-                <div class="card-img-wrapper">
-                    <img src="${images[0]}" alt="${title}" loading="lazy" />
-                </div>
-                <div class="card-body">
-                    <div class="card-header-row">
-                        <h3 class="card-title">${title}</h3>
-                        <span class="card-rating">★ ${rating}</span>
-                    </div>
-                </div>
-            </div>`;
-        }
-    }
+// Buscar productos
 
-    // Renderizar paginación
-    function renderPagination() {
-        const totalPages = Math.ceil(totalProducts / LIMIT);
+async function searchProducts(text) {
+    const response = await fetch(`https://dummyjson.com/products/search?q=${text}`);
+    const data = await response.json();
 
-        // Si solo hay 1 página no se muestra
-        if (totalPages <= 1) {
-            pagination.innerHTML = '';
-            return;
-        }
+    resultTitle.textContent = `Resultados para "${text}"`;
+    searchResults.innerHTML = '';
 
-        pagination.innerHTML = `
-            <button class="page-btn" id="btn-prev" ${currentPage === 1 ? 'disabled' : ''}>
-                ← Anterior
-            </button>
-            <span class="page-info">Página ${currentPage} de ${totalPages}</span>
-            <button class="page-btn" id="btn-next" ${currentPage === totalPages ? 'disabled' : ''}>
-                Siguiente →
-            </button>
-        `;
-
-        document.getElementById('btn-prev').addEventListener('click', () => {
-            currentPage--;
-            loadPage();
-        });
-
-        document.getElementById('btn-next').addEventListener('click', () => {
-            currentPage++;
-            loadPage();
-        });
-    }
-
-    // Cargar página según estado actual
-    async function loadPage() {
-        const skip = (currentPage - 1) * LIMIT;
-        let url;
-
-        if (currentSlug) {
-            url = `https://dummyjson.com/products/category/${currentSlug}?limit=${LIMIT}&skip=${skip}`;
-        } else {
-            url = `https://dummyjson.com/products?limit=${LIMIT}&skip=${skip}`;
-        }
-
-        const res  = await fetch(url);
-        const data = await res.json();
-
-        totalProducts = data.total;
-        renderCatalogCards(data.products);
-        renderPagination();
-
-        // Volver al tope de la página
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Cargar todos los productos (inicio)
-    function getProducts() {
-        catalogTitle.textContent = 'Todos los productos';
-        currentSlug = null;
-        currentPage = 1;
-        loadPage();
-    }
-
-    // Cargar por categoría
-    function getByCategory(slug, name) {
-        catalogTitle.textContent = name;
-        currentSlug = slug;
-        currentPage = 1;
-        loadPage();
-        showCatalog();
-    }
-
-    // Cargar categorías y renderizar botones
-    async function loadCategories() {
-        const res  = await fetch('https://dummyjson.com/products/categories');
-        const cats = await res.json();
-
-        catList.innerHTML = '';
-        for (const { slug, name } of cats) {
-            const btn = document.createElement('button');
-            btn.className   = 'cat-btn';
-            btn.textContent = name;
-            btn.addEventListener('click', () => {
-                setActive(btn);
-                getByCategory(slug, name);
-            });
-            catList.appendChild(btn);
-        }
-    }
-
-    // Buscar productos (sin paginación, muestra todos los resultados)
-    async function searchProducts(text) {
-        const res  = await fetch(`https://dummyjson.com/products/search?q=${text}`);
-        const data = await res.json();
-
-        if (data.total === 0) {
-            quantity.textContent = 0;
-            resultTitle.textContent = `Resultados para "${text}"`;
-            searchResults.innerHTML = '<p class="no-results">No se encontraron productos.</p>';
-            showResults();
-            return;
-        }
-
-        // Filtrar solo los que el título incluya el texto buscado
-        const filtrados = data.products.filter(p =>
-            p.title.toLowerCase().includes(text.toLowerCase())
-        );
-
-        quantity.textContent = filtrados.length;
-        resultTitle.textContent = `Resultados para "${text}"`;
-
-        if (filtrados.length === 0) {
-            searchResults.innerHTML = '<p class="no-results">No se encontraron productos.</p>';
-            showResults();
-            return;
-        }
-
-        renderSearchCards(filtrados);
+    if (data.total === 0) {
+        quantity.textContent = 0;
+        searchResults.innerHTML = '<p class="no-results">No se encontraron productos.</p>';
         showResults();
+        return;
     }
 
-    // Inicio
-    function goHome() {
-        setActive(btnInicio);
-        showCatalog();
-        getProducts();
-    }
-
-    siteLogo.addEventListener('click', goHome);
-    btnInicio.addEventListener('click', goHome);
-
-    formSearch.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const text = this.querySelector('input').value.trim();
-        if (!text) return;
-        searchProducts(text);
-        this.querySelector('input').value = '';
+    // Filtramos solo los que el título coincida exacto con lo buscado
+    const filtrados = data.products.filter(function (product) {
+        return product.title.toLowerCase().includes(text.toLowerCase());
     });
 
-    // Arrancar
-    loadCategories();
+    quantity.textContent = filtrados.length;
+
+    if (filtrados.length === 0) {
+        searchResults.innerHTML = '<p class="no-results">No se encontraron productos.</p>';
+        showResults();
+        return;
+    }
+
+    for (let product of filtrados) {
+        const { title, images, rating } = product;
+
+        searchResults.innerHTML += `
+        <div class="card">
+            <div class="card-img-wrapper">
+                <img src="${images[0]}" alt="${title}" loading="lazy" />
+            </div>
+            <div class="card-body">
+                <div class="card-header-row">
+                    <h3 class="card-title">${title}</h3>
+                    <span class="card-rating">★ ${rating}</span>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    showResults();
+}
+
+
+// Cargar categorías
+
+async function loadCategories() {
+    const response = await fetch('https://dummyjson.com/products/categories');
+    const cats = await response.json();
+
+    catList.innerHTML = '';
+
+    for (let cat of cats) {
+        const { slug, name } = cat;
+
+        const btn = document.createElement('button');
+        btn.className   = 'cat-btn';
+        btn.textContent = name;
+
+        btn.addEventListener('click', function () {
+            setActive(btn);
+            currentSlug = slug;
+            currentPage = 1;
+            getByCategory(slug, name);
+        });
+
+        catList.appendChild(btn);
+    }
+}
+
+
+// Paginación
+
+function renderPagination() {
+    // Cuántas páginas hay en total (redondeamos hacia arriba)
+    const totalPages = Math.ceil(totalProducts / LIMIT);
+
+    // Si hay 1 sola página no mostramos los botones
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    pagination.innerHTML = `
+        <button class="page-btn" id="btn-prev" ${currentPage === 1 ? 'disabled' : ''}>
+            ← Anterior
+        </button>
+        <span class="page-info">Página ${currentPage} de ${totalPages}</span>
+        <button class="page-btn" id="btn-next" ${currentPage === totalPages ? 'disabled' : ''}>
+            Siguiente →
+        </button>
+    `;
+
+    document.getElementById('btn-prev').addEventListener('click', function () {
+        currentPage--;
+        loadPage();
+    });
+
+    document.getElementById('btn-next').addEventListener('click', function () {
+        currentPage++;
+        loadPage();
+    });
+}
+
+// Decide qué función llamar según si hay categoría activa o no
+function loadPage() {
+    if (currentSlug) {
+        getByCategory(currentSlug, catalogTitle.textContent);
+    } else {
+        getProducts();
+    }
+}
+
+
+// Mostrar / ocultar secciones
+
+function showCatalog() {
+    resultsSection.style.display = 'none';
+    catalogSection.style.display = '';
+    formSearch.querySelector('input').value = '';
+    quantity.textContent = '0';
+    searchResults.innerHTML = '';
+}
+
+function showResults() {
+    catalogSection.style.display = 'none';
+    resultsSection.style.display = '';
+}
+
+
+// Botón activo del menú
+
+function setActive(btn) {
+    if (activeBtn) activeBtn.classList.remove('cat-btn--active');
+    activeBtn = btn;
+    btn.classList.add('cat-btn--active');
+}
+
+
+// Ir al inicio
+
+function goHome() {
+    setActive(btnInicio);
+    currentSlug = null;
+    currentPage = 1;
+    catalogTitle.textContent = 'Todos los productos';
+    showCatalog();
     getProducts();
+}
+
+
+// Eventos
+
+siteLogo.addEventListener('click', goHome);
+btnInicio.addEventListener('click', goHome);
+
+formSearch.addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const text = this.querySelector('input').value.trim();
+
+    if (text.length === 0) return;
+
+    searchProducts(text);
+    this.querySelector('input').value = '';
 });
+
+
+// Arranque
+
+loadCategories();
+getProducts();
