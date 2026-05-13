@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ── Elementos del DOM ──────────────────────────────────────────
+    // Elementos del DOM
     const formSearch     = document.getElementById('frm-search');
     const catalog        = document.getElementById('Catalog');
     const searchResults  = document.getElementById('search-results');
@@ -15,13 +15,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const pagination     = document.getElementById('pagination');
     const categoryNav    = document.querySelector('.category-nav');
 
-    // ── Estado de paginación ───────────────────────────────────────
+    // Estado de paginación
     const LIMIT = 10;           // productos por página
     let currentPage  = 1;
     let totalProducts = 0;
     let currentSlug  = null;    // null = todos, 'beauty' = categoría
 
-    // ── Estado activo de categoría ──────────────────────────────────
+    // Estado activo de categoría
     let activeBtn = btnInicio;
 
     function setActive(btn) {
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.classList.add('cat-btn--active');
     }
 
-    // ── Vista: mostrar catálogo, ocultar resultados ─────────────────
+    // Vista: mostrar catálogo, ocultar resultados
     function showCatalog() {
         resultsSection.style.display = 'none';
         catalogSection.style.display = '';
@@ -39,13 +39,13 @@ document.addEventListener('DOMContentLoaded', function () {
         searchResults.innerHTML = '';
     }
 
-    // ── Vista: mostrar resultados, ocultar catálogo ─────────────────
+    // Vista: mostrar resultados, ocultar catálogo
     function showResults() {
         catalogSection.style.display = 'none';
         resultsSection.style.display = '';
     }
 
-    // ── Renderizar tarjetas de catálogo ─────────────────────────────
+    // Renderizar tarjetas de catálogo
     function renderCatalogCards(products) {
         catalog.innerHTML = '';
         for (const { title, description, price, images, availabilityStatus } of products) {
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ── Renderizar tarjetas de búsqueda ─────────────────────────────
+    // Renderizar tarjetas de búsqueda
     function renderSearchCards(products) {
         searchResults.innerHTML = '';
         for (const { title, images, rating } of products) {
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ── Renderizar paginación ────────────────────────────────────────
+    // Renderizar paginación
     function renderPagination() {
         const totalPages = Math.ceil(totalProducts / LIMIT);
 
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ── Cargar página según estado actual ────────────────────────────
+    // Cargar página según estado actual
     async function loadPage() {
         const skip = (currentPage - 1) * LIMIT;
         let url;
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ── Cargar todos los productos (inicio) ──────────────────────────
+    // Cargar todos los productos (inicio)
     function getProducts() {
         catalogTitle.textContent = 'Todos los productos';
         currentSlug = null;
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loadPage();
     }
 
-    // ── Cargar por categoría ─────────────────────────────────────────
+    // Cargar por categoría
     function getByCategory(slug, name) {
         catalogTitle.textContent = name;
         currentSlug = slug;
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showCatalog();
     }
 
-    // ── Cargar categorías y renderizar botones ───────────────────────
+    // Cargar categorías y renderizar botones
     async function loadCategories() {
         const res  = await fetch('https://dummyjson.com/products/categories');
         const cats = await res.json();
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ── Buscar productos (sin paginación, muestra todos los resultados)
+    // Buscar productos (sin paginación, muestra todos los resultados)
     async function searchProducts(text) {
         const res  = await fetch(`https://dummyjson.com/products/search?q=${text}`);
         const data = await res.json();
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showResults();
     }
 
-    // ── Inicio ───────────────────────────────────────────────────────
+    // Inicio
     function goHome() {
         setActive(btnInicio);
         showCatalog();
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
         this.querySelector('input').value = '';
     });
 
-    // ── Arrancar ─────────────────────────────────────────────────────
+    // Arrancar
     loadCategories();
     getProducts();
 });
